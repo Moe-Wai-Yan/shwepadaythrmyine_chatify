@@ -345,9 +345,9 @@ class MessagesController extends Controller
                     ->orWhere('ch_messages.to_id', auth('web')->user()->id);
             })
             // ->where('customers.id','!=',auth('web')->user()->id)
-            ->select('ec_customers.*', DB::raw('MAX(ch_messages.created_at) max_created_at'))
+            ->select('customers.*', DB::raw('MAX(ch_messages.created_at) max_created_at'))
             ->orderBy('max_created_at', 'desc')
-            ->groupBy('ec_customers.id')
+            ->groupBy('customers.id')
             ->paginate($request->per_page ?? $this->perPage);
 
         $usersList = $users->items();
