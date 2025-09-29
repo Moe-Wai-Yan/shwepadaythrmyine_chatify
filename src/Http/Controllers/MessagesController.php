@@ -336,9 +336,9 @@ class MessagesController extends Controller
     public function getContacts(Request $request)
     {
         // get all users that received/sent message from/to [Auth user]
-        $users = Message::join('ec_customers',  function ($join) {
-            $join->on('ch_messages.from_id', '=', 'ec_customers.id')
-                ->orOn('ch_messages.to_id', '=', 'ec_customers.id');
+        $users = Message::join('customers',  function ($join) {
+            $join->on('ch_messages.from_id', '=', 'customers.id')
+                ->orOn('ch_messages.to_id', '=', 'customers.id');
         })
             ->where(function ($q) {
                 $q->where('ch_messages.from_id', auth('web')->user()->id)
