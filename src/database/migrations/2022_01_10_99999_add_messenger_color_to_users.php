@@ -13,8 +13,8 @@ class AddMessengerColorToUsers extends Migration
      */
     public function up()
     {
-        Schema::table('ec_users', function (Blueprint $table) {
-            if (!Schema::hasColumn('ec_users', 'messenger_color')) {
+        Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'messenger_color')) {
                 $table->string('messenger_color')->nullable();
             }
         });
@@ -27,7 +27,7 @@ class AddMessengerColorToUsers extends Migration
      */
     public function down()
     {
-        Schema::table('ec_users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('messenger_color');
         });
     }
