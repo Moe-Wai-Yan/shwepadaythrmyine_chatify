@@ -166,76 +166,111 @@ class MessagesController extends Controller
     //     ]);
     // }
 
-    public function send(Request $request)
-    {
-        $error = (object)[
-            'status' => 0,
-            'message' => null
-        ];
+     public function send(Request $request)
+{
+    $error = (object)[
+        'status' => 0,
+        'message' => null
+    ];
 
-        $messages = [];
+    $messages = [];
 
-        // multiple files check
-        if ($request->hasFile('file')) {
-            $allowed_images = Chatify::getAllowedImages();
-            $allowed_files  = Chatify::getAllowedFiles();
-            $allowed        = array_merge($allowed_images, $allowed_files);
+    // -------------------------------------------
+    // If FILE EXISTS → handle file message
+    // -------------------------------------------
+    if ($request->hasFile('file')) {
 
-            $files = is_array($request->file('file')) ? $request->file('file') : [$request->file('file')];
+        $allowed_images = Chatify::getAllowedImages();
+        $allowed_files  = Chatify::getAllowedFiles();
+        $allowed        = array_merge($allowed_images, $allowed_files);
 
-            foreach ($files as $file) {
-                if ($file->getSize() < Chatify::getMaxUploadSize()) {
-                    if (in_array(strtolower($file->extension()), $allowed)) {
-                        $attachment_title = $file->getClientOriginalName();
-                        $attachment = Str::uuid() . "." . $file->extension();
+        $files = is_array($request->file('file'))
+            ? $request->file('file')
+            : [$request->file('file')];
 
-                        $file->storeAs(
-                            config('chatify.attachments.folder'),
-                            $attachment,
-                            config('chatify.storage_disk_name')
-                        );
+        foreach ($files as $file) {
 
-                        // create a new message for this file
-                        $message = Chatify::newMessage([
-                            'type' => $request['type'],
-                            'from_id' => auth('api')->user()->id,
-                            'to_id' => $request['id'],
-                            'body' => trim($request['message']),
-                            'sent_by' => 'user',
-                            'attachment' => json_encode((object)[
-                                'new_name' => $attachment,
-                                'old_name' => htmlentities(trim($attachment_title), ENT_QUOTES, 'UTF-8'),
-                            ]),
-                        ]);
+            if ($file->getSize() < Chatify::getMaxUploadSize()) {
 
-                        $messageData = Chatify::parseMessage($message);
+                if (in_array(strtolower($file->extension()), $allowed)) {
 
-                        // push to receiver
-                        Chatify::push("private-chatify." . $request['id'], 'messaging', [
-                            'from_id' => auth('api')->user()->id,
-                            'to_id'   => $request['id'],
-                            'message' => Chatify::messageCard($messageData, true)
-                        ]);
+                    $attachment_title = $file->getClientOriginalName();
+                    $attachment = Str::uuid() . "." . $file->extension();
 
-                        $messages[] = $messageData;
-                    } else {
-                        $error->status = 1;
-                        $error->message = "File extension not allowed!";
-                    }
+                    // Store file
+                    $file->storeAs(
+                        config('chatify.attachments.folder'),
+                        $attachment,
+                        config('chatify.storage_disk_name')
+                    );
+
+                    // Create message
+                    $message = Chatify::newMessage([
+                        'type' => $request['type'],
+                        'from_id' => auth('api')->user()->id,
+                        'to_id' => $request['id'],
+                        'body' => trim($request['message']),
+                        'sent_by' => 'user',
+                        'attachment' => json_encode((object)[
+                            'new_name' => $attachment,
+                            'old_name' => htmlentities(trim($attachment_title), ENT_QUOTES, 'UTF-8'),
+                        ]),
+                    ]);
+
+                    $messageData = Chatify::parseMessage($message);
+
+                    Chatify::push("private-chatify." . $request['id'], 'messaging', [
+                        'from_id' => auth('api')->user()->id,
+                        'to_id'   => $request['id'],
+                        'message' => Chatify::messageCard($messageData, true)
+                    ]);
+
+                    $messages[] = $messageData;
+
                 } else {
                     $error->status = 1;
-                    $error->message = "File size you are trying to upload is too large!";
+                    $error->message = "File extension not allowed!";
                 }
+
+            } else {
+                $error->status = 1;
+                $error->message = "File size is too large!";
             }
         }
-
-        return Response::json([
-            'status'  => '200',
-            'error'   => $error,
-            'message' => $messages,
-            'tempID'  => $request['temporaryMsgId'],
-        ]);
     }
+
+    // -------------------------------------------
+    // If NO FILE → create a simple text message
+    // -------------------------------------------
+    if (!$request->hasFile('file')) {
+
+        $message = Chatify::newMessage([
+            'type'    => $request['type'],
+            'from_id' => auth('api')->user()->id,
+            'to_id'   => $request['id'],
+            'body'    => trim($request['message']),
+            'sent_by' => 'user',
+            'attachment' => null,
+        ]);
+
+        $messageData = Chatify::parseMessage($message);
+
+        Chatify::push("private-chatify." . $request['id'], 'messaging', [
+            'from_id' => auth('api')->user()->id,
+            'to_id'   => $request['id'],
+            'message' => Chatify::messageCard($messageData, true)
+        ]);
+
+        $messages[] = $messageData;
+    }
+
+    return response()->json([
+        'status'  => '200',
+        'error'   => $error,
+        'message' => $messages,
+        'tempID'  => $request['temporaryMsgId'],
+    ]);
+}
 
     /**
      * fetch [user/group] messages from database
