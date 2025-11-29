@@ -3,11 +3,11 @@
 namespace Chatify\Http\Controllers;
 
 use Google_Client;
-use App\Models\Customer;
-use App\Models\User as Admin;
-use App\Models\FcmTokenKey;
+use App\Models\Shared\Customer;
+use App\Models\Shared\User as Admin;
+use App\Models\Shared\FcmTokenKey;
 use Illuminate\Support\Str;
-use App\Models\Customer as User;
+use App\Models\Shared\Customer as User;
 use Illuminate\Http\Request;
 use App\Models\ChMessage as Message;
 use Illuminate\Http\JsonResponse;
