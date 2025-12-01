@@ -232,7 +232,7 @@ class ChatifyMessenger
     public function makeSeen($user_id)
     {
         Message::Where('from_id', $user_id)
-                ->where('to_id', auth('api')->user()->id)
+                ->where('to_id', auth('customer')->user()->id)
                 ->where('seen', 0)
                 ->update(['seen' => 1]);
         return 1;
