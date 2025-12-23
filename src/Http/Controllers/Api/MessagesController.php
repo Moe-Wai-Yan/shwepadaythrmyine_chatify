@@ -207,7 +207,7 @@ class MessagesController extends Controller
                     // Create message
                     $message = Chatify::newMessage([
                         'type' => $request['type'],
-                        'from_id' => auth('customer')->user()->id,
+                        'from_id' => auth('api')->user()->id,
                         'to_id' => $request['id'],
                         'body' => trim($request['message']),
                         'sent_by' => 'user',
@@ -220,7 +220,7 @@ class MessagesController extends Controller
                     $messageData = Chatify::parseMessage($message);
 
                     Chatify::push("private-chatify." . $request['id'], 'messaging', [
-                        'from_id' => auth('customer')->user()->id,
+                        'from_id' => auth('api')->user()->id,
                         'to_id'   => $request['id'],
                         'message' => Chatify::messageCard($messageData, true)
                     ]);
